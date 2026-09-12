@@ -4,13 +4,29 @@
   "description": "Pull clean, structured data out of dense source PDFs — text, chunks, and tasks.",
   "license": "Apache-2.0",
   "type": "module",
-  "main": "src/pdf.js",
-  "bin": { "quarry": "src/cli.mjs" },
-  "exports": {
-    ".": "./src/pdf.js",
-    "./chunk": "./src/chunk.js",
-    "./tasks": "./src/tasks.js"
+  "main": "src/index.js",
+  "bin": {
+    "quarry": "src/cli.mjs"
   },
-  "keywords": ["pdf", "text-extraction", "chunking", "rag", "ingestion", "structured-extraction"],
-  "dependencies": { "pdfjs-dist": "^4.0.0" }
+  "exports": {
+    ".": "./src/index.js",
+    "./chunk": "./src/chunk.js",
+    "./tasks": "./src/tasks.js",
+    "./outline": "./src/outline.js",
+    "./pdf": "./src/pdf.js"
+  },
+  "keywords": [
+    "pdf",
+    "text-extraction",
+    "chunking",
+    "rag",
+    "ingestion",
+    "structured-extraction"
+  ],
+  "dependencies": {
+    "pdfjs-dist": "^4.0.0"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
 }

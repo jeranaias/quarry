@@ -51,6 +51,25 @@ Bring your own header pattern if your documents number things differently:
 extractTasks(text, { headerRe: /(^|\n)(TASK-\d+):\s*([^\n]+)/g });
 ```
 
+## Structure: outline & sections
+
+Turn a wall of text into a navigable tree — pull the heading hierarchy, or split the document into the
+body under each heading:
+
+```js
+import { outline, sections } from 'quarry/outline';
+
+outline(text);
+// → [{ level: 1, title: 'Chapter 1 Fundamentals', line: 0 },
+//    { level: 2, title: '1.1 Aiming', line: 12 }, … ]
+
+sections(text);
+// → [{ title: '1.1 Aiming', level: 2, body: '…' }, … ]   ← great for per-section chunking
+```
+
+Recognizes chapter/part/section markers, decimal numbering (`1.2.3`), and short all-caps headings —
+so you can chunk *by section* instead of by arbitrary length.
+
 ## Install
 
 ```bash
