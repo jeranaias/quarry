@@ -107,3 +107,92 @@ test('sections captures preamble text before the first heading', () => {
 test('outline rejects non-string input', () => {
   assert.throws(() => outline(123), TypeError);
 });
+
+test('extractTasks matches with a reused/preset global headerRe and does not mutate it', () => {
+  const text = `TASK-9: Rig the Line
+CONDITION: Given the rig and a load.
+STANDARD: Secure the load to standard.
+PERFORMANCE STEPS:
+1. Inspect the rigging.
+2. Attach the load.
+REFERENCES: none`;
+  const re = /(^|\n)(TASK-\d+):\s*([^\n]+)/g;
+  re.lastIndex = 40; // simulate a caller that already used this regex
+  const tasks = extractTasks(text, { headerRe: re });
+  assert.equal(tasks.length, 1, 'a preset lastIndex must not cause the header to be missed');
+  assert.equal(tasks[0].code, 'TASK-9');
+  assert.equal(re.lastIndex, 40, 'the caller\'s regex object must not be mutated');
+});
+
+test('extractTasks parses lowercase Condition:/Standard: keywords', () => {
+  const text = `0300-DEF-1003: Defend a Position
+Condition: Given a squad and an assigned sector.
+Standard: Construct the position and maintain 360-degree observation.
+Performance Steps:
+1. Construct primary fighting positions.
+2. Camouflage and conceal the position.
+References: none`;
+  const tasks = extractTasks(text);
+  assert.equal(tasks.length, 1, 'case-insensitive keyword matching should parse lowercase labels');
+  assert.ok(tasks[0].condition.includes('squad'));
+  assert.ok(tasks[0].standard.includes('360'));
+  assert.equal(tasks[0].performanceSteps.length, 2);
+});
+
+test('extractTasks keeps the full final task and all its steps by default', () => {
+  const longStep = 'Do the thing '.repeat(30).trim() + '.'; // > 240 chars
+  const stepLines = Array.from({ length: 12 }, (_, i) => `${i + 1}. ${i === 5 ? longStep : 'Perform step number ' + (i + 1) + ' carefully.'}`).join('\n');
+  const text = `TASK-1: Final Task
+CONDITION: Given the setup.
+STANDARD: Meet the outcome.
+PERFORMANCE STEPS:
+${stepLines}`; // no trailing section — exercises slice-to-end for the last mark
+  const tasks = extractTasks(text, { headerRe: /(^|\n)(TASK-\d+):\s*([^\n]+)/ });
+  assert.equal(tasks.length, 1);
+  assert.equal(tasks[0].performanceSteps.length, 12, 'no silent 10-step cap by default');
+  assert.ok(tasks[0].performanceSteps.some((s) => s.length >= 240), 'no silent 240-char step cap by default');
+});
+
+test('extractTasks honors maxSteps / maxStepChars options', () => {
+  const longStep = 'Do the thing '.repeat(30).trim() + '.';
+  const stepLines = Array.from({ length: 12 }, (_, i) => `${i + 1}. ${i === 5 ? longStep : 'Perform step number ' + (i + 1) + ' carefully.'}`).join('\n');
+  const text = `TASK-1: Capped Task
+CONDITION: Given the setup.
+STANDARD: Meet the outcome.
+PERFORMANCE STEPS:
+${stepLines}`;
+  const tasks = extractTasks(text, { headerRe: /(^|\n)(TASK-\d+):\s*([^\n]+)/, maxSteps: 5, maxStepChars: 200 });
+  assert.equal(tasks[0].performanceSteps.length, 5, 'maxSteps should cap the step count');
+  assert.ok(!tasks[0].performanceSteps.some((s) => s.length > 200), 'maxStepChars should drop over-long steps');
+});
+
+test('chunkText rejects a non-finite or <1 maxWords', () => {
+  assert.throws(() => chunkText('some text', NaN), TypeError);
+  assert.throws(() => chunkText('some text', 0), TypeError);
+  assert.throws(() => chunkText('some text', -5), TypeError);
+  assert.throws(() => chunkText('some text', Infinity), TypeError);
+});
+
+test('chunkText hard-splits a pdf-style single-newline paragraph over the budget', () => {
+  // pdfText historically joined page bands with single "\n" and only blank-lined BETWEEN pages,
+  // so a whole page arrives as ONE paragraph. It must still be split down to the word budget.
+  const sentence = 'The quarry crew hauled the heavy stone up the steep incline before dawn broke over the ridge. ';
+  const page = Array.from({ length: 15 }, () => sentence.trim()).join('\n'); // ~255 words, single \n between lines, no blank line
+  assert.equal(page.split(/\n\s*\n/).length, 1, 'sanity: this is a single blank-line-delimited paragraph');
+  const chunks = chunkText(page, 100);
+  assert.ok(chunks.length >= 2, 'a 255-word single paragraph must not become one 255-word chunk');
+  for (const c of chunks) assert.ok(c.split(/\s+/).length <= 100, 'every chunk stays within the word budget');
+});
+
+test('chunkText hard-splits an oversized single paragraph by sentence', () => {
+  const para = Array.from({ length: 20 }, (_, i) => `Sentence number ${i + 1} carries several plain words to fill space.`).join(' ');
+  const chunks = chunkText(para, 40);
+  assert.ok(chunks.length >= 3, 'a single ~180-word paragraph should split into multiple ~40-word chunks');
+  for (const c of chunks) assert.ok(c.split(/\s+/).length <= 40 + 12, 'pieces stay near the budget');
+});
+
+test('outline detects a unicode / accented all-caps heading', () => {
+  const text = 'SÉCURITÉ DES OPÉRATIONS\nbody text about operational security follows here on this line';
+  const heads = outline(text);
+  assert.ok(heads.some((h) => /SÉCURITÉ/.test(h.title)), 'accented all-caps heading should be recognized');
+});

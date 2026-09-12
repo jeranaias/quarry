@@ -13,8 +13,8 @@ function classify(line) {
   const l = line.trim();
   if (!l || l.length > 90) return null;
   for (const h of HEAD) { const m = l.match(h.re); if (m) return { level: h.level, title: l }; }
-  // short ALL-CAPS line with letters → a heading
-  if (/^[A-Z0-9][A-Z0-9 ,&/'()-]{2,60}$/.test(l) && /[A-Z]{3,}/.test(l) && l.split(' ').length <= 9) return { level: 2, title: l };
+  // short ALL-CAPS line with letters → a heading (unicode-aware: accented/non-ASCII caps count)
+  if (/^[\p{Lu}0-9][\p{Lu}0-9 ,&/'()-]{2,60}$/u.test(l) && /\p{Lu}{3,}/u.test(l) && l.split(' ').length <= 9) return { level: 2, title: l };
   return null;
 }
 
