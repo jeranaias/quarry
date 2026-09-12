@@ -13,11 +13,16 @@ hundreds of pages. Quarry does the dig.
 - **Structured tasks** — parses the `Condition / Standard / Performance Steps` format straight into JSON objects.
 
 ```js
+import { readFileSync } from 'node:fs';
 import { pdfText } from 'quarry';
 import { chunkText } from 'quarry/chunk';
 import { extractTasks } from 'quarry/tasks';
 
-const { text, pages } = await pdfText(new Uint8Array(fs.readFileSync('manual.pdf')));
+const { text, pages, pageTexts } = await pdfText(readFileSync('manual.pdf'));
+// text      → full document, reading order rebuilt from glyph positions
+// pages     → page count
+// pageTexts → text of each page, so you can keep a page number on every chunk
+
 const chunks = chunkText(text);          // → ["…", "…"]  retrieval-sized, denoised
 const tasks  = extractTasks(text);       // → [{ code, title, condition, standard, performanceSteps }]
 ```

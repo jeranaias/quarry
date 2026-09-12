@@ -40,7 +40,6 @@
   "homepage": "https://github.com/jeranaias/quarry#readme",
   "bugs": "https://github.com/jeranaias/quarry/issues",
   "files": [
-    "src",
-    "example"
+    "src"
   ]
 }

@@ -18,20 +18,33 @@ function classify(line) {
   return null;
 }
 
-/** Extract the heading outline. Returns [{ level, title, line }]. */
+/**
+ * Extract the heading outline.
+ * @param {string} text document text (one heading per line)
+ * @returns {{ level: number, title: string, line: number }[]} headings in document order
+ */
 export function outline(text) {
+  if (typeof text !== 'string') throw new TypeError('outline(text): text must be a string');
   const lines = text.split('\n');
   const out = [];
   lines.forEach((line, i) => { const h = classify(line); if (h) out.push({ ...h, line: i }); });
   return out;
 }
 
-/** Split the document into sections under each detected heading. Returns [{ title, level, body }]. */
+/**
+ * Split the document into the body under each detected heading. Any text that precedes the first
+ * heading is returned as a leading `{ title: null, level: 0 }` preamble section.
+ * @param {string} text document text
+ * @returns {{ title: string|null, level: number, body: string }[]}
+ */
 export function sections(text) {
+  if (typeof text !== 'string') throw new TypeError('sections(text): text must be a string');
   const lines = text.split('\n');
   const heads = outline(text);
   if (!heads.length) return [{ title: null, level: 0, body: text.trim() }];
   const out = [];
+  const preamble = lines.slice(0, heads[0].line).join('\n').trim();
+  if (preamble) out.push({ title: null, level: 0, body: preamble });
   for (let h = 0; h < heads.length; h++) {
     const start = heads[h].line + 1;
     const end = h + 1 < heads.length ? heads[h + 1].line : lines.length;

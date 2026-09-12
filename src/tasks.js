@@ -21,7 +21,12 @@ const grab = (block, startKey, endKeys) => {
  * PERFORMANCE STEPS. Returns [{ code, title, condition, standard, performanceSteps }].
  */
 export function extractTasks(raw, { headerRe } = {}) {
-  const re = headerRe || /(^|\n)([0-9X]{4}-[A-Z]{2,4}-[0-9]{4}):\s*([^\n]+)/g;
+  if (typeof raw !== 'string') throw new TypeError('extractTasks(raw): raw must be a string');
+  if (headerRe && !(headerRe instanceof RegExp)) throw new TypeError('extractTasks: headerRe must be a RegExp');
+  // A non-global headerRe would make re.exec() loop forever; force the global flag.
+  const re = headerRe
+    ? (headerRe.global ? headerRe : new RegExp(headerRe.source, headerRe.flags + 'g'))
+    : /(^|\n)([0-9X]{4}-[A-Z]{2,4}-[0-9]{4}):\s*([^\n]+)/g;
   const marks = [];
   let m;
   while ((m = re.exec(raw))) marks.push({ idx: m.index + (m[1] ? m[1].length : 0), code: m[2], title: m[3].trim() });
