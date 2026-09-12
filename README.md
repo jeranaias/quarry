@@ -1,5 +1,7 @@
 # ⛏️ Quarry
 
+[![CI](https://github.com/jeranaias/quarry/actions/workflows/ci.yml/badge.svg)](https://github.com/jeranaias/quarry/actions/workflows/ci.yml) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 **Pull clean, structured data out of dense source PDFs — text, chunks, and tasks.**
 
 Big reference PDFs are a mess to work with: multi-column layouts scramble when you extract them,
